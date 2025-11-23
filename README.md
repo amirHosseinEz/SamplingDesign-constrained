@@ -1,4 +1,4 @@
-# SamplingDesign-C: Constrained RNA Design
+# SamplingDesign-C
 
 **An extension of the SamplingDesign algorithm that supports designing RNA sequences under specific IUPAC nucleotide constraints.**
 
@@ -18,28 +18,20 @@ make
 g++ -O3 -std=c++11 -fopenmp main.cpp -o main
 ```
 
-## 💻 Usage
 
-### Basic Command
-
-The program reads the target secondary structure from **standard input (stdin)** and takes configuration parameters as command-line arguments.
-
-```bash
-echo "((...))" | ./main [OPTIONS] ... [CONSTRAINED_FLAG] [IUPAC_STRING]
-```
-
-**Note:** The C++ code expects arguments in a specific positional order. Ensure your constraint flag and string are passed as the **31st** and **32nd** arguments respectively (or handled via the provided shell wrapper).
 
 ### Example Run
 
 ```bash
-echo "((...))" | ./main ncrna_design prob targeted 0.75 1 1 0 0.9 0.999 0.01 0 0.96 0 10 50 5000 0 50 100 0 0 2500 10 0 1 1 42 0 0 0 1 "NNNRAAA"
+./run.sh example ./data/example.txt --constrained --iupac_constraint "HBVHBGUHVHVHDVBBHDBDBCUGAVGAGVDVBVHBBBVHBHBCGAAACVDBVB"
 ```
 
 In this example:
-* **Structure:** `((...))`
+* **Structure:** example.txt
 * **Constraint Flag:** `1` (Enabled)
-* **Constraint String:** `NNNRAAA`
+* **Constraint String:** `HBVHBGUHVHVHDVBBHDBDBCUGAVGAGVDVBVHBBBVHBHBCGAAACVDBVB`
+
+The results will be saved in ./results/example/. The script then parses the result file to generate learning curves in ./graphs/example/ and output the best solution (based on each metric) into ./analysis/example/.
 
 ### IUPAC Code Reference (RNA)
 
@@ -62,19 +54,6 @@ In this example:
 | **N** | A, C, G, or U | Any base |
 | **.** or **-** | - | Gap |
 
-## 📂 Batch Processing
-
-A shell script is provided to process a list of puzzles automatically:
-
-```bash
-./run_batch.sh <result_folder_name> <data_file.txt>
-```
-
-**Data File Format:**
-Each line in the data file should contain three columns:
-```text
-<Puzzle_ID>  <DotBracket_Structure>  <IUPAC_Constraint>
-```
 
 ## 🔗 References
 
