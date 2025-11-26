@@ -1,0 +1,123 @@
+#!/usr/bin/env python3
+
+import gflags as flags
+import subprocess
+import sys
+import os
+
+FLAGS = flags.FLAGS
+
+def setgflags():
+    flags.DEFINE_string('mode', "ncrna_design", "non-Coding RNA Design")
+    flags.DEFINE_string('objective', "prob", "objectives: \"prob\", \"ned\", \"dist\", \"ddg\"", short_name='obj')
+    
+    # initialization (epsilon-targeted by default)
+    flags.DEFINE_string('initializations', "targeted", "initializations: uniform / targeted", short_name='init')
+    flags.DEFINE_float('eps', 0.75, "eps * uniform + (1 - eps) * targeted")
+
+    # parameterization (softmax with adam optimizer by default)
+    flags.DEFINE_boolean('projection', False, "use projection instead of softmax parameterization")
+    flags.DEFINE_boolean('no_adam', False, "turn off adam optimizer")
+    flags.DEFINE_float('beta_1', 0.9, "Adam's first moment decay rate", short_name='b1')
+    flags.DEFINE_float('beta_2', 0.999, "Adam's second moment decay rate", short_name='b2')
+    flags.DEFINE_boolean('nesterov', False, "use nesterov's accelerated gradient descent")
+    
+    # learning rate
+    flags.DEFINE_float('initial_lr', 0.01, "set learning rate", short_name='lr')
+    
+    # learning rate decay (off by default)
+    flags.DEFINE_boolean('lr_decay', False, "use learning rate decay")
+    flags.DEFINE_float('lr_decay_rate', 0.5, "decay rate")
+    flags.DEFINE_boolean('adaptive_lr', False, "use adaptive learning rate decay")
+    flags.DEFINE_integer('k_ma_lr', 20, "how many steps since objective function improve before reducing lr")
+    flags.DEFINE_integer('lr_decay_step', 50, "decay every k steps (when adapative lr decay is not used)")
+    
+    # number of steps
+    flags.DEFINE_integer('num_steps', 2000, "set the max number of steps", short_name='step')
+    flags.DEFINE_boolean('no_early_stop', False, "turn off early stopping")
+    flags.DEFINE_integer('k_ma', 50, "stop when the objective function hasn't improved for k steps")
+    
+    # parameters used for linearpartition and linearfold
+    flags.DEFINE_integer('beamsize', 250, "set beam size", short_name='b')
+    flags.DEFINE_boolean('sharpturn', False, "set sharpturn")
+    flags.DEFINE_boolean('is_lazy', False, "use lazy outside for LinearPartition BPP")
+
+    # sampling parameters
+    flags.DEFINE_integer('sample_size', 2500, "number of samples", short_name='k')
+    flags.DEFINE_integer('best_k', 1, "print out best k unique samples at each step")
+    flags.DEFINE_boolean('importance', False, "use importance sampling")
+
+    # ablation studies
+    flags.DEFINE_boolean('no_mismatch', False, "ablate 4 x 4 coupled mismatch")
+    flags.DEFINE_boolean('no_trimismatch', False, "ablate 4 x 4 x 4 coupled trimismatch for 1 x 2, 1 x 3, 1 x n internal loops")
+
+    flags.DEFINE_boolean('verbose', False, "print out distribution and gradient at each step")
+    flags.DEFINE_integer('seed', 1, "random seed")
+    flags.DEFINE_integer('num_threads', 0, "number of threads used in openmp (0 for default)")
+    flags.DEFINE_boolean('boxplot', False, "print out the objective of all samples")
+
+    # constraned mode added
+    flags.DEFINE_boolean('constrained', False, "Enable IUPAC constraint mode.")
+    flags.DEFINE_string('iupac_constraint', '', 'IUPAC constraint string (required for constrained mode).')
+
+
+    argv = FLAGS(sys.argv)
+
+def main():
+    print("--- Python wrapper started...", file=sys.stderr) # <-- ADD THIS
+
+    mode = str(FLAGS.mode)
+    objective = str(FLAGS.obj)
+
+    init = str(FLAGS.init)
+    eps = str(FLAGS.eps)
+
+    softmax = '0' if FLAGS.projection else '1'
+    adam = '0' if FLAGS.no_adam else '1'
+    nesterov = '1' if FLAGS.nesterov else '0'
+    beta_1 = str(FLAGS.beta_1)
+    beta_2 = str(FLAGS.beta_2)
+
+    initial_lr = str(FLAGS.lr)
+    lr_decay = '1' if FLAGS.lr_decay else '0'
+    lr_decay_rate = str(FLAGS.lr_decay_rate)
+    adaptive_lr= '1' if FLAGS.adaptive_lr else '0'
+    k_ma_lr = str(FLAGS.k_ma_lr)
+    lr_decay_step = str(FLAGS.lr_decay_step)
+
+    num_steps = str(FLAGS.step)
+    early_stop= '0' if FLAGS.no_early_stop else '1'
+    k_ma = str(FLAGS.k_ma)
+
+    beamsize = str(FLAGS.b)
+    sharpturn = '1' if FLAGS.sharpturn else '0'
+    is_lazy = '1' if FLAGS.is_lazy else '0'
+
+    sample_size = str(FLAGS.k)
+    best_k = str(FLAGS.best_k)
+    importance = '1' if FLAGS.importance else '0'
+
+    mismatch = '0' if FLAGS.no_mismatch else '1'
+    trimismatch = '0' if FLAGS.no_trimismatch else '1'
+
+    verbose = '1' if FLAGS.verbose else '0'
+    seed = str(FLAGS.seed)
+    num_threads = str(FLAGS.num_threads)
+    boxplot = '1' if FLAGS.boxplot else '0'
+
+    constrained = '1' if FLAGS.constrained else '0'
+    iupac_constraint = str(FLAGS.iupac_constraint)
+
+    exe_file = 'bin/main'
+
+    path = os.path.dirname(os.path.abspath(__file__))
+    cmd = ["%s/%s" % (path, exe_file), mode, objective, init, eps, softmax, adam, nesterov, beta_1, beta_2, initial_lr, lr_decay, lr_decay_rate, adaptive_lr, k_ma_lr, lr_decay_step, num_steps, early_stop, k_ma, beamsize, sharpturn, is_lazy, sample_size, best_k, importance, mismatch, trimismatch, seed, verbose, num_threads, boxplot, constrained, iupac_constraint]
+        
+    print("--- Calling C++ executable...", file=sys.stderr) # <-- ADD THIS
+
+    subprocess.call(cmd, stdin=sys.stdin)
+    
+if __name__ == '__main__':
+    setgflags()
+    main()
+
